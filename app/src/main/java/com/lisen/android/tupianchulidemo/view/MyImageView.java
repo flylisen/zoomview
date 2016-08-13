@@ -2,6 +2,7 @@ package com.lisen.android.tupianchulidemo.view;
 
 import android.content.Context;
 import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
@@ -405,9 +406,19 @@ public class MyImageView extends ImageView implements ViewTreeObserver.OnGlobalL
 
         mLaxtPointCount = pointCount;
 
+        RectF rectF = getRectF();
         switch (event.getAction()) {
-            case MotionEvent.ACTION_MOVE:
 
+            case MotionEvent.ACTION_DOWN:
+                //图片的高度或宽度大于控件的高度或宽度,请求不拦截
+                if (rectF.width() > getWidth() + 0.01 || rectF.height() > getHeight() + 0.01) {
+                    getParent().requestDisallowInterceptTouchEvent(true);
+                }
+            case MotionEvent.ACTION_MOVE:
+                //图片的高度或宽度大于控件的高度或宽度,请求不拦截
+                if (rectF.width() > getWidth() + 0.01 || rectF.height() > getHeight() + 0.01) {
+                    getParent().requestDisallowInterceptTouchEvent(true);
+                }
                 float dx = x - mLaxtX;
                 float dy = y - mLaxtY;
 
@@ -416,7 +427,7 @@ public class MyImageView extends ImageView implements ViewTreeObserver.OnGlobalL
                 }
                 //确实移动了
                 if (mCanDrag) {
-                    RectF rectF = getRectF();
+
                     int width = getWidth();
                     int height = getHeight();
                     if (getDrawable() != null) {
