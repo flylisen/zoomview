@@ -2,6 +2,7 @@ package com.lisen.android.tupianchulidemo.view;
 
 import android.content.Context;
 import android.graphics.Matrix;
+import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -39,6 +40,9 @@ public class MyImageView extends ImageView implements ViewTreeObserver.OnGlobalL
      * 缩放手势检测
      */
     private ScaleGestureDetector mScaleGestureDetector;
+
+    //-------------------自由移动-----------------------
+    
 
     public MyImageView(Context context) {
         this(context, null);
@@ -159,12 +163,81 @@ public class MyImageView extends ImageView implements ViewTreeObserver.OnGlobalL
             if (scale * scaleFactor < mInitScale) {
                 scaleFactor = mInitScale / scale;
             }
-            mScaleMatrix.postScale(scaleFactor, scaleFactor, getWidth() / 2, getHeight() / 2);
+            mScaleMatrix.postScale(scaleFactor, scaleFactor, detector.getFocusX(), detector.getFocusY());
+            //检测边界
+            checkBoardAndCenterWhenScale();
             setImageMatrix(mScaleMatrix);
         }
         return true;
     }
 
+    //缩放时进行边界检查，防止出现白边并且图片宽或高小于控件的宽高时使其位于控件中心
+    private void checkBoardAndCenterWhenScale() {
+        RectF rectF = getRectF();
+
+        float deltaX = 0.f;
+        float deltaY = 0.f;
+        //控件宽度
+        int width = getWidth();
+        //控件高度
+        int height = getHeight();
+        //图片的宽度大于控件宽度
+        if (rectF.width() >= width) {
+            //左边出现白边
+            if (rectF.left > 0) {
+                //向左边移动
+                deltaX = -rectF.left;
+            }
+
+            //右边出现白边
+            if (width - rectF.right > 0) {
+                //向右边移动
+                deltaX = width - rectF.right;
+            }
+        }
+
+        //图片的高度大于控件的高度
+        if (rectF.height() >= height) {
+            //上边出现白边
+            if (rectF.top > 0) {
+                //向上边移动
+                deltaY = -rectF.top;
+            }
+            //下边出现白边
+            if (height - rectF.bottom > 0) {
+                //向下边移动
+                deltaY = height - rectF.bottom;
+            }
+        }
+
+        //图片的宽度小于控件的宽度
+        if (rectF.width() < width) {
+            //宽度上使其居中
+            deltaX = width / 2.0f - rectF.right + rectF.width() / 2.0f;
+        }
+
+        //图片的高度小于控件的高度
+        if (rectF.height() < height) {
+            deltaY = height / 2.0f - rectF.bottom + rectF.height() / 2.0f;
+        }
+
+        mScaleMatrix.postTranslate(deltaX, deltaY);
+    }
+
+    /**
+     * 获得图片放大或缩小以后的宽和高，及l,r,t,b
+     * @return
+     */
+    private RectF getRectF() {
+        RectF rectF = new RectF();
+        Drawable d = getDrawable();
+        if (d != null) {
+            rectF.set(0, 0, d.getIntrinsicWidth(), d.getIntrinsicHeight());
+            mScaleMatrix.mapRect(rectF);
+        }
+
+        return  rectF;
+    }
     @Override
     public boolean onScaleBegin(ScaleGestureDetector detector) {
         return true;
